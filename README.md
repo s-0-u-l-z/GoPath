@@ -22,7 +22,7 @@ go install github.com/s-0-u-l-z/GoPath@latest
 ```
 Then, you can run it anywhere using:  
 ```sh
-gopath -u https://example.com
+GoPath -u https://example.com
 ```
 
 ### ✅ Manual Build (Linux/macOS/Windows)
@@ -30,50 +30,50 @@ If you want to **build from source**, clone the repo and compile it:
 ```sh
 git clone https://github.com/s-0-u-l-z/GoPath.git
 cd GoPath
-go build -o gopath main.go
-sudo mv gopath /usr/local/bin/  # Move to global path
+go build -o GoPath main.go
+sudo mv GoPath /usr/local/bin/  # Move to global path
 ```
 
 Now, run:  
 ```sh
-gopath -u https://example.com
+GoPath -u https://example.com
 ```
 
 ---
 
 ## 🎯 **Usage**
 ```sh
-gopath -u <target-url> -w <wordlist> -e <extensions> -t <threads> [options]
+GoPath -u <target-url> -w <wordlist> -e <extensions> -t <threads> [options]
 ```
 
 ### **Example Scans**
 #### 🔹 **Basic Scan**  
 ```sh
-gopath -u https://example.com
+GoPath -u https://example.com
 ```
 #### 🔹 **Using a Custom Wordlist**  
 ```sh
-gopath -u https://example.com -w custom_wordlist.txt
+GoPath -u https://example.com -w custom_wordlist.txt
 ```
 #### 🔹 **Scanning with File Extensions**  
 ```sh
-gopath -u https://example.com -e php,html,js
+GoPath -u https://example.com -e php,html,js
 ```
 #### 🔹 **Multi-threaded Fast Scan (25 threads)**  
 ```sh
-gopath -u https://example.com -t 25
+GoPath -u https://example.com -t 25
 ```
 #### 🔹 **Recursive Scanning**  
 ```sh
-gopath -u https://example.com -r
+GoPath -u https://example.com -r
 ```
 #### 🔹 **Save Results to a File**  
 ```sh
-gopath -u https://example.com -o results.txt
+GoPath -u https://example.com -o results.txt
 ```
 #### 🔹 **Using a Proxy**  
 ```sh
-gopath -u https://example.com -p http://127.0.0.1:8080
+GoPath -u https://example.com -p http://127.0.0.1:8080
 ```
 
 ---
