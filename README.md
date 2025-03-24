@@ -114,8 +114,10 @@ Let's make **GoPath** even better together! 🎯🔥
 ---
 
 ## 📜 **License**
-GoPath is open-source under the **MIT License**.  
-Feel free to use and modify it!  
+GoPath is open-source under the **GNU General Public License v2.0 (GPL-2.0)**.  
+You may modify and distribute it, but **any changes must also be open-source under GPL-2.0**.  
+
+📖 **Full License Text:** [GNU GPL v2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)  
 
 ---
 
