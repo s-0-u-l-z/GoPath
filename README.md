@@ -6,6 +6,7 @@ A fast and lightweight **web directory scanner** built in **Go**, inspired by `d
 ## 🔥 Features  
 ✅ Multi-threaded scanning for high performance  
 ✅ Supports **custom wordlists** and **file extensions**  
+✅ Supports scanning **multiple URLs from a file (`-l`)**  
 ✅ HTTP status code filtering (`200, 403, 500, etc.`)  
 ✅ Works with **proxy support** (`http://127.0.0.1:8080`)  
 ✅ **Recursive scanning** (`-r` option)  
@@ -45,12 +46,22 @@ GoPath -u https://example.com
 ```sh
 GoPath -u <target-url> -w <wordlist> -e <extensions> -t <threads> [options]
 ```
+or  
+```sh
+GoPath -l <urls-file> -w <wordlist> -t <threads> [options]
+```
 
 ### **Example Scans**
-#### 🔹 **Basic Scan**  
+#### 🔹 **Basic Scan (Single URL)**  
 ```sh
 GoPath -u https://example.com
 ```
+#### 🔹 **Scan Multiple URLs from a File**  
+```sh
+GoPath -l urls.txt -w wordlist.txt
+```
+(📌 `urls.txt` should contain multiple URLs, one per line.)  
+
 #### 🔹 **Using a Custom Wordlist**  
 ```sh
 GoPath -u https://example.com -w custom_wordlist.txt
@@ -81,7 +92,8 @@ GoPath -u https://example.com -p http://127.0.0.1:8080
 ## ⚙️ **Options**
 | Option | Description |
 |--------|-------------|
-| `-u, --url` | Target URL (required) |
+| `-u, --url` | Target URL (required for single scan) |
+| `-l, --urls-file` | File containing multiple URLs to scan |
 | `-w, --wordlist` | Wordlist file (default: `wordlist.txt`) |
 | `-e, --extensions` | Extensions to scan (e.g. `php,html,js`) |
 | `-t, --threads` | Number of threads (default: `10`) |
