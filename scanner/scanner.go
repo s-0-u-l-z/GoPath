@@ -11,8 +11,8 @@ import (
 )
 
 type Arguments struct {
-	URL              string
 	URLsFile         string
+	URL              string
 	Wordlist         string
 	Extensions       string
 	Threads          int
@@ -40,7 +40,7 @@ func ParseArguments() Arguments {
 	help := parser.Flag("h", "help", &argparse.Options{Help: "Show this help message and exit"})
 
 	// Target options
-	url := parser.String("u", "url", &argparse.Options{Required: true, Help: "Target URL"})
+	url := parser.String("u", "url", &argparse.Options{Help: "Target URL"})
 	urlsFile := parser.String("l", "urls-file", &argparse.Options{Help: "File containing list of URLs to scan"})
 	wordlist := parser.String("w", "wordlist", &argparse.Options{Default: "wordlist.txt", Help: "Wordlist file"})
 
@@ -102,7 +102,36 @@ func ParseArguments() Arguments {
 }
 
 func StartScan(args Arguments) {
-	// Open the wordlist file
+	var targets []string
+
+	// Load URLs from a file if provided
+	if args.URLsFile != "" {
+		file, err := os.Open(args.URLsFile)
+		if err != nil {
+			fmt.Println("Error opening URLs file:", err)
+			return
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			url := strings.TrimSpace(scanner.Text())
+
+			// Ensure URLs include http:// or https://
+			if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+				targets = append(targets, url)
+			} else {
+				fmt.Printf("Skipping invalid URL (missing http/https): %s\n", url)
+			}
+		}
+	} else if args.URL != "" {
+		targets = append(targets, args.URL)
+	} else {
+		fmt.Println("Error: No target URL provided. Use -u for a single URL or -l for a URL list.")
+		return
+	}
+
+	// Open wordlist
 	file, err := os.Open(args.Wordlist)
 	if err != nil {
 		fmt.Println("Error opening wordlist:", err)
@@ -117,25 +146,15 @@ func StartScan(args Arguments) {
 	for scanner.Scan() {
 		word := scanner.Text()
 
-		// Generate URL variations with extensions if provided
-		var paths []string
-		if args.Extensions == "" {
-			paths = append(paths, fmt.Sprintf("%s/%s", args.URL, word))
-		} else {
-			for _, ext := range strings.Split(args.Extensions, ",") {
-				paths = append(paths, fmt.Sprintf("%s/%s.%s", args.URL, word, ext))
-			}
-		}
-
-		// Launch concurrent requests
-		for _, path := range paths {
+		// Generate URLs to scan for each target
+		for _, target := range targets {
 			wg.Add(1)
 			go func(url string) {
 				defer wg.Done()
 				sem <- struct{}{}
 				MakeRequest(url, args)
 				<-sem
-			}(path)
+			}(fmt.Sprintf("%s/%s", target, word))
 		}
 	}
 
