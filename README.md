@@ -1,3 +1,4 @@
+
 # 🚀 GoPath - Fast Web Directory Scanner in Go
 
 ![GoPath](https://img.shields.io/badge/GoPath-Scanner-blue?style=for-the-badge)  
@@ -108,6 +109,39 @@ GoPath -u https://example.com -p http://127.0.0.1:8080
 
 ---
 
+## ⚠️ **Performance Warning**
+GoPath is optimized for **maximum speed**, but it can be **very resource-intensive**, especially in `--mode fast`.
+
+### 🧠 What to Know:
+- `--mode fast` uses aggressive threading and reduced timeouts
+- Even in standard mode, high thread counts (`-t 100+`) can stress your system
+- Recursive scans or large wordlists amplify the load
+
+### ✅ **Recommended System Specs:**
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| RAM      | 4 GB    | 8 GB+       |
+| CPU      | 2 cores | 4+ cores    |
+| OS       | Linux/macOS/Windows | Prefer Linux for stability |
+
+If you're seeing crashes, timeouts, or hangs:
+- Lower your `-t` value (e.g. `-t 25`)
+- Avoid recursive mode or massive wordlists
+- Monitor system usage while running
+
+---
+
+### ⚙️ **Coming Soon**
+| Flag | Description |
+|------|-------------|
+| `--max-ram <MB>` | (Coming Soon) Automatically limits number of threads if RAM is below the threshold |
+| `--performance` | (Coming Soon) Shows live scan speed, memory usage, and estimated system load |
+
+> 🚧 These features are in development and will help avoid system overload, especially on lower-end machines.
+
+---
+
 ## 💡 **Why Use GoPath?**
 🚀 **Optimized for Speed** → Multi-threaded & fast  
 🌐 **Flexible** → Custom wordlists, extensions, proxies  
@@ -136,5 +170,3 @@ You may modify and distribute it, but **any changes must also be open-source und
 ## 📞 **Contact**
 📧 **GitHub:** [s-0-u-l-z](https://github.com/s-0-u-l-z)  
 📌 **Issues & Bugs?** [Report here](https://github.com/s-0-u-l-z/GoPath/issues)  
-
----
