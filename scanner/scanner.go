@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 
 	"github.com/akamensky/argparse"
+	"github.com/s-0-u-l-z/GoPath/utils"
 )
 
 type Arguments struct {
@@ -16,6 +18,7 @@ type Arguments struct {
 	Wordlist         string
 	Extensions       string
 	Threads          int
+	Mode             string
 	Recursive        bool
 	MaxRecursion     int
 	IncludeStatus    string
@@ -33,47 +36,38 @@ type Arguments struct {
 }
 
 func ParseArguments() Arguments {
-	parser := argparse.NewParser("GoPath", "Fast web directory scanner in Go")
+	parser := argparse.NewParser("GoPath", "Fastest web path scanner in Go")
 
-	// General options
-	showVersion := parser.Flag("", "version", &argparse.Options{Help: "Show program's version number and exit"})
-	help := parser.Flag("h", "help", &argparse.Options{Help: "Show this help message and exit"})
-
-	// Target options
 	url := parser.String("u", "url", &argparse.Options{Help: "Target URL"})
 	urlsFile := parser.String("l", "urls-file", &argparse.Options{Help: "File containing list of URLs to scan"})
-	wordlist := parser.String("w", "wordlist", &argparse.Options{Default: "wordlist.txt", Help: "Wordlist file"})
+	wordlist := parser.String("w", "wordlist", &argparse.Options{Default: "wordlist.txt", Help: "Wordlist file (default is embedded)"})
+	extensions := parser.String("e", "extensions", &argparse.Options{Help: "Comma-separated extensions to try"})
+	mode := parser.String("m", "mode", &argparse.Options{Default: "Standard", Help: "Scan mode: Standard or Fast"})
 
-	// Extensions & Recursive scanning
-	extensions := parser.String("e", "extensions", &argparse.Options{Help: "Extensions to scan (comma-separated)"})
 	recursive := parser.Flag("r", "recursive", &argparse.Options{Help: "Enable recursive scanning"})
-	maxRecursion := parser.Int("R", "max-recursion-depth", &argparse.Options{Default: 3, Help: "Maximum recursion depth"})
+	maxRecursion := parser.Int("R", "max-recursion-depth", &argparse.Options{Default: 3, Help: "Max recursion depth"})
 
-	// Filtering results
-	includeStatus := parser.String("i", "include-status", &argparse.Options{Help: "Include specific status codes (e.g. 200,300-399)"})
-	excludeStatus := parser.String("x", "exclude-status", &argparse.Options{Help: "Exclude specific status codes (e.g. 404,500-599)"})
+	includeStatus := parser.String("i", "include-status", &argparse.Options{Help: "Include status codes (e.g. 200,301-399)"})
+	excludeStatus := parser.String("x", "exclude-status", &argparse.Options{Help: "Exclude status codes (e.g. 404,500-599)"})
 
-	// Performance settings
-	threads := parser.Int("t", "threads", &argparse.Options{Default: 10, Help: "Number of concurrent threads"})
-	timeout := parser.Int("", "timeout", &argparse.Options{Default: 5, Help: "Request timeout in seconds"})
+	threads := parser.Int("t", "threads", &argparse.Options{Default: 50, Help: "Number of threads"})
+	timeout := parser.Int("", "timeout", &argparse.Options{Default: 5, Help: "Request timeout (seconds)"})
 
-	// Network options
-	proxy := parser.String("p", "proxy", &argparse.Options{Help: "Use a proxy (http://proxy:port)"})
+	proxy := parser.String("p", "proxy", &argparse.Options{Help: "Proxy URL (http://host:port)"})
 	userAgent := parser.String("", "user-agent", &argparse.Options{Help: "Custom User-Agent"})
-	randomAgent := parser.Flag("", "random-agent", &argparse.Options{Help: "Use a random User-Agent for each request"})
+	randomAgent := parser.Flag("", "random-agent", &argparse.Options{Help: "Use random User-Agent"})
 
-	// Output settings
-	outputFile := parser.String("o", "output", &argparse.Options{Help: "Output results to a file"})
-	quietMode := parser.Flag("q", "quiet-mode", &argparse.Options{Help: "Run in quiet mode (only output results)"})
+	outputFile := parser.String("o", "output", &argparse.Options{Help: "Write results to file"})
+	quiet := parser.Flag("q", "quiet", &argparse.Options{Help: "Quiet mode (suppress logs)"})
 
-	// Authentication & Cookies
-	auth := parser.String("", "auth", &argparse.Options{Help: "Authentication credential (user:password or token)"})
-	cookie := parser.String("", "cookie", &argparse.Options{Help: "Send a custom Cookie header"})
-	followRedirects := parser.Flag("F", "follow-redirects", &argparse.Options{Help: "Follow HTTP redirects"})
+	auth := parser.String("", "auth", &argparse.Options{Help: "Basic auth or token"})
+	cookie := parser.String("", "cookie", &argparse.Options{Help: "Custom cookie"})
+	followRedirects := parser.Flag("F", "follow-redirects", &argparse.Options{Help: "Follow redirects"})
 
-	// Parse arguments
+	showVersion := parser.Flag("", "version", &argparse.Options{Help: "Show version and exit"})
+
 	err := parser.Parse(os.Args)
-	if err != nil || *help {
+	if err != nil {
 		fmt.Println(parser.Usage(err))
 		os.Exit(1)
 	}
@@ -84,6 +78,7 @@ func ParseArguments() Arguments {
 		Wordlist:        *wordlist,
 		Extensions:      *extensions,
 		Threads:         *threads,
+		Mode:            *mode,
 		Recursive:       *recursive,
 		MaxRecursion:    *maxRecursion,
 		IncludeStatus:   *includeStatus,
@@ -93,7 +88,7 @@ func ParseArguments() Arguments {
 		UserAgent:       *userAgent,
 		RandomAgent:     *randomAgent,
 		OutputFile:      *outputFile,
-		QuietMode:       *quietMode,
+		QuietMode:       *quiet,
 		Auth:            *auth,
 		Cookie:          *cookie,
 		FollowRedirects: *followRedirects,
@@ -101,10 +96,21 @@ func ParseArguments() Arguments {
 	}
 }
 
+type job struct {
+	URL string
+}
+
+func ensureHTTP(url string) string {
+	url = strings.TrimSpace(url)
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return "http://" + url
+	}
+	return url
+}
+
 func StartScan(args Arguments) {
 	var targets []string
 
-	// Load URLs from a file if provided
 	if args.URLsFile != "" {
 		file, err := os.Open(args.URLsFile)
 		if err != nil {
@@ -115,48 +121,55 @@ func StartScan(args Arguments) {
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			url := strings.TrimSpace(scanner.Text())
-
-			// Ensure URLs include http:// or https://
-			if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-				targets = append(targets, url)
-			} else {
-				fmt.Printf("Skipping invalid URL (missing http/https): %s\n", url)
-			}
+			url := ensureHTTP(scanner.Text())
+			targets = append(targets, url)
 		}
 	} else if args.URL != "" {
-		targets = append(targets, args.URL)
+		targets = append(targets, ensureHTTP(args.URL))
 	} else {
 		fmt.Println("Error: No target URL provided. Use -u for a single URL or -l for a URL list.")
 		return
 	}
 
-	// Open wordlist
-	file, err := os.Open(args.Wordlist)
-	if err != nil {
-		fmt.Println("Error opening wordlist:", err)
-		return
+	var wordlist []string
+	if args.Wordlist == "" || args.Wordlist == "wordlist.txt" {
+		wordlist = utils.Wordlist
+	} else {
+		data, err := os.ReadFile(args.Wordlist)
+		if err != nil {
+			fmt.Printf("Failed to load custom wordlist: %v\n", err)
+			return
+		}
+		wordlist = strings.Split(string(data), "\n")
 	}
-	defer file.Close()
 
+	if strings.ToLower(args.Mode) == "fast" {
+		args.Threads = runtime.NumCPU() * 4
+	}
+
+	jobs := make(chan job, args.Threads*2)
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, args.Threads)
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		word := scanner.Text()
+	for i := 0; i < args.Threads; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				MakeRequest(j.URL, args)
+			}
+		}()
+	}
 
-		// Generate URLs to scan for each target
+	for _, word := range wordlist {
+		word = strings.TrimSpace(word)
+		if word == "" {
+			continue
+		}
 		for _, target := range targets {
-			wg.Add(1)
-			go func(url string) {
-				defer wg.Done()
-				sem <- struct{}{}
-				MakeRequest(url, args)
-				<-sem
-			}(fmt.Sprintf("%s/%s", target, word))
+			jobs <- job{URL: fmt.Sprintf("%s/%s", target, word)}
 		}
 	}
 
+	close(jobs)
 	wg.Wait()
 }
