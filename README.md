@@ -1,4 +1,3 @@
-
 # 🚀 GoPath - Fast Web Directory Scanner in Go
 
 ![GoPath](https://img.shields.io/badge/GoPath-Scanner-blue?style=for-the-badge)  
@@ -112,23 +111,10 @@ GoPath -u https://example.com -p http://127.0.0.1:8080
 ## ⚠️ **Performance Warning**
 GoPath is optimized for **maximum speed**, but it can be **very resource-intensive**, especially in `--mode fast`.
 
-### 🧠 What to Know:
-- `--mode fast` uses aggressive threading and reduced timeouts
-- Even in standard mode, high thread counts (`-t 100+`) can stress your system
-- Recursive scans or large wordlists amplify the load
-
-### ✅ **Recommended System Specs:**
-
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| RAM      | 4 GB    | 8 GB+       |
-| CPU      | 2 cores | 4+ cores    |
-| OS       | Linux/macOS/Windows | Prefer Linux for stability |
-
-If you're seeing crashes, timeouts, or hangs:
-- Lower your `-t` value (e.g. `-t 25`)
-- Avoid recursive mode or massive wordlists
-- Monitor system usage while running
+> If you're seeing crashes, timeouts, or hangs:
+> - Lower your `-t` value (e.g. `-t 25`)
+> - Avoid recursive mode or massive wordlists
+> - Monitor system usage while running
 
 ---
 
@@ -170,3 +156,65 @@ You may modify and distribute it, but **any changes must also be open-source und
 ## 📞 **Contact**
 📧 **GitHub:** [s-0-u-l-z](https://github.com/s-0-u-l-z)  
 📌 **Issues & Bugs?** [Report here](https://github.com/s-0-u-l-z/GoPath/issues)  
+
+---
+
+## 📊 **Performance Benchmarks**
+
+We ran a head-to-head performance test between **GoPath** and `dirsearch` to see how they compare:
+
+### 🚀 GoPath vs dirsearch
+
+**Test Setup**: 10 runs of each tool on the same target system.
+
+```
+🚀 Running GoPath 10 times from source...
+⚙️  GoPath run 1
+⏱️  took .076s
+⚙️  GoPath run 2
+⏱️  took .012s
+⚙️  GoPath run 3
+⏱️  took .012s
+⚙️  GoPath run 4
+⏱️  took .012s
+⚙️  GoPath run 5
+⏱️  took .012s
+⚙️  GoPath run 6
+⏱️  took .011s
+⚙️  GoPath run 7
+⏱️  took .011s
+⚙️  GoPath run 8
+⏱️  took .011s
+⚙️  GoPath run 9
+⏱️  took .011s
+⚙️  GoPath run 10
+⏱️  took .012s
+
+🔍 Running dirsearch 10 times...
+🧭 dirsearch run 1
+⏱️  took 8.479s
+🧭 dirsearch run 2
+⏱️  took 9.337s
+🧭 dirsearch run 3
+⏱️  took 9.995s
+🧭 dirsearch run 4
+⏱️  took 8.049s
+🧭 dirsearch run 5
+⏱️  took 7.738s
+🧭 dirsearch run 6
+⏱️  took 7.893s
+🧭 dirsearch run 7
+⏱️  took 6.271s
+🧭 dirsearch run 8
+⏱️  took 6.625s
+🧭 dirsearch run 9
+⏱️  took 6.890s
+🧭 dirsearch run 10
+⏱️  took 9.448s
+```
+
+### ✨ ============================= ✨  
+🎯 **Average GoPath time**: **0.018s**  
+🎯 **Average dirsearch time**: **8.072s**  
+⚡️ **GoPath is approximately _448x faster_ than dirsearch**  
+✨ ============================= ✨
